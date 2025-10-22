@@ -22,6 +22,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # This seems to be necessary for some dependencies of R-shinylive
+      - name: Install libarchive-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-dev
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
