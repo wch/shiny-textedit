@@ -18,6 +18,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { useShinyInput, useShinyOutput } from "@posit/shiny-react";
@@ -107,20 +111,23 @@ export function App() {
               >
                 Language:
               </label>
-              <select
+              <NativeSelect
                 id="language-select"
                 value={selectedLanguage}
                 onChange={handleLanguageChange}
-                className="bg-background text-foreground border border-input rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="r">R</option>
-                <option value="python">Python</option>
-                <option value="javascript">JavaScript</option>
-                <option value="typescript">TypeScript</option>
-                <option value="html">HTML</option>
-                <option value="css">CSS</option>
-                <option value="json">JSON</option>
-              </select>
+                <NativeSelectOption value="r">R</NativeSelectOption>
+                <NativeSelectOption value="python">Python</NativeSelectOption>
+                <NativeSelectOption value="javascript">
+                  JavaScript
+                </NativeSelectOption>
+                <NativeSelectOption value="typescript">
+                  TypeScript
+                </NativeSelectOption>
+                <NativeSelectOption value="html">HTML</NativeSelectOption>
+                <NativeSelectOption value="css">CSS</NativeSelectOption>
+                <NativeSelectOption value="json">JSON</NativeSelectOption>
+              </NativeSelect>
             </div>
             <Switch
               icon={
