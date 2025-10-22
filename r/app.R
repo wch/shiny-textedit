@@ -37,6 +37,10 @@ server <- function(input, output, session) {
     words <- words[nchar(words) > 0]
     length(words)
   })
+
+  output$editor_content <- render_json({
+    input$code_content
+  })
 }
 
 shinyApp(ui = page_react(title = "Shiny Code Editor"), server = server)

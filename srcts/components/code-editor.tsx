@@ -59,7 +59,7 @@ export function CodeEditor({
     <div className={className}>
       <CodeMirror
         value={value}
-        height="600px"
+        height="100%"
         theme={theme === "dark" ? vscodeDark : vscodeLight}
         extensions={[getLanguageExtension()]}
         onChange={(value) => onChange(value)}
