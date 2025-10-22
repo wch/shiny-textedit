@@ -82,7 +82,7 @@ server <- function(input, output, session) {
     ctx$recentEdits
   })
 
-  # Process cursor context for LLM autocomplete
+  # Process cursor context for LLM autocomplete (FIM format)
   output$cursor_info <- render_json({
     ctx <- input$cursor_context
 
@@ -90,84 +90,83 @@ server <- function(input, output, session) {
       return("Waiting for cursor context...")
     }
 
-    # Format cursor information
+    # FIM (Fill-in-Middle) format optimized for code completion LLMs
     info_parts <- c(
-      "Cursor Position:",
-      paste0("  Line: ", ctx$line),
-      paste0("  Column: ", ctx$column),
-      paste0("  Language: ", ctx$language)
+      paste0("Language: ", ctx$language),
+      paste0("Line: ", ctx$line, ", Column: ", ctx$column),
+      "",
+      "<|fim_prefix|>",
+      ctx$prefix,
+      "<|fim_suffix|>",
+      ctx$suffix,
+      "<|fim_middle|>"
     )
 
-    # Add selection information
-    if (!is.null(ctx$selections) && length(ctx$selections) > 0) {
+    # Add selection information if present
+    has_selections <- !is.null(ctx$selections) && length(ctx$selections) > 0
+    has_text_selected <- FALSE
+
+    if (has_selections) {
+      for (sel in ctx$selections) {
+        if (nchar(sel$text) > 0) {
+          has_text_selected <- TRUE
+          break
+        }
+      }
+    }
+
+    if (has_text_selected) {
       info_parts <- c(
         info_parts,
         "",
-        "Current Selection(s):",
-        paste0("  Total selections: ", length(ctx$selections))
+        "---",
+        "SELECTED TEXT:"
       )
 
       for (i in seq_along(ctx$selections)) {
         sel <- ctx$selections[[i]]
-        has_text <- nchar(sel$text) > 0
-
-        if (has_text) {
+        if (nchar(sel$text) > 0) {
           info_parts <- c(
             info_parts,
-            paste0("  Selection ", i, ":"),
-            paste0("    Range: Line ", sel$fromLine, ":", sel$fromColumn,
-                   " → Line ", sel$toLine, ":", sel$toColumn),
-            paste0("    Positions: ", sel$from, "-", sel$to),
-            paste0("    Text: \"", substr(sel$text, 1, 100), "\"")
-          )
-        } else {
-          info_parts <- c(
-            info_parts,
-            paste0("  Selection ", i, ": (cursor only at Line ",
-                   sel$fromLine, ":", sel$fromColumn, ")")
+            paste0("Selection ", i, " (Line ", sel$fromLine, ":", sel$fromColumn,
+                   " → ", sel$toLine, ":", sel$toColumn, "):"),
+            sel$text
           )
         }
       }
     }
 
-    info_parts <- c(
-      info_parts,
-      "",
-      "Context:",
-      "==============",
-      ctx$prefix,
-      "-- [CURSOR] --",
-      ctx$suffix,
-      "=============="
-    )
-
-    # Add recent edits information
+    # Add recent edits information (newest first)
     if (!is.null(ctx$recentEdits) && length(ctx$recentEdits) > 0) {
       info_parts <- c(
         info_parts,
         "",
-        "Recent Edits:",
-        paste0("  Total edits tracked: ", length(ctx$recentEdits))
+        "---",
+        "RECENT EDITS:"
       )
 
-      # Show last 3 edits
-      num_to_show <- min(3, length(ctx$recentEdits))
+      # Show last 5 edits in reverse order (newest first)
+      num_to_show <- min(5, length(ctx$recentEdits))
       for (i in seq_len(num_to_show)) {
-        edit <- ctx$recentEdits[[length(ctx$recentEdits) - num_to_show + i]]
-        info_parts <- c(
-          info_parts,
-          paste0("  Edit ", i, ": pos ", edit$from, "-", edit$to)
-        )
-        if (nchar(edit$remove) > 0) {
+        edit <- ctx$recentEdits[[length(ctx$recentEdits) - i + 1]]
+
+        # Format as one-line transformation
+        if (nchar(edit$remove) > 0 && nchar(edit$insert) > 0) {
           info_parts <- c(
             info_parts,
-            paste0("    Removed: \"", substr(edit$remove, 1, 50), "\"")
+            paste0("- Edit ", i, " (pos ", edit$from, "-", edit$to, "): \"",
+                   edit$remove, "\" → \"", edit$insert, "\"")
           )
-        }
-        if (nchar(edit$insert) > 0) {
+        } else if (nchar(edit$insert) > 0) {
           info_parts <- c(
             info_parts,
-            paste0("    Inserted: \"", substr(edit$insert, 1, 50), "\"")
+            paste0("- Edit ", i, " (pos ", edit$from, "): inserted \"", edit$insert, "\"")
+          )
+        } else if (nchar(edit$remove) > 0) {
+          info_parts <- c(
+            info_parts,
+            paste0("- Edit ", i, " (pos ", edit$from, "-", edit$to, "): deleted \"",
+                   edit$remove, "\"")
           )
         }
       }
