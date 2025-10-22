@@ -40,6 +40,8 @@
     "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-python": "^6.2.1",
     "@posit/shiny-react": "^0.0.14",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@uiw/codemirror-theme-github": "^4.25.2",
     "@uiw/codemirror-theme-vscode": "^4.25.2",
     "@uiw/react-codemirror": "^4.25.2",
     "class-variance-authority": "^0.7.1",
@@ -47,6 +49,7 @@
     "codemirror-lang-r": "^0.1.1",
     "lucide-react": "^0.542.0",
     "motion": "^12.23.24",
+    "radix-ui": "^1.4.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwind-merge": "^3.3.1"

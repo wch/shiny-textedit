@@ -6,7 +6,9 @@ import { css } from "@codemirror/lang-css";
 import { json } from "@codemirror/lang-json";
 import { r } from "codemirror-lang-r";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { githubLight } from "@uiw/codemirror-theme-github";
 import React from "react";
+import type { Theme } from "@/hooks/useSystemTheme";
 
 export type Language = "javascript" | "typescript" | "python" | "r" | "html" | "css" | "json";
 
@@ -14,10 +16,11 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   language: Language;
+  theme?: Theme;
   className?: string;
 }
 
-export function CodeEditor({ value, onChange, language, className = "" }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, language, theme = "dark", className = "" }: CodeEditorProps) {
   // Get the appropriate language extension based on selected language
   const getLanguageExtension = () => {
     switch (language) {
@@ -45,7 +48,7 @@ export function CodeEditor({ value, onChange, language, className = "" }: CodeEd
       <CodeMirror
         value={value}
         height="600px"
-        theme={vscodeDark}
+        theme={theme === "dark" ? vscodeDark : githubLight}
         extensions={[getLanguageExtension()]}
         onChange={(value) => onChange(value)}
         basicSetup={{
