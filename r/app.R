@@ -51,29 +51,53 @@ server <- function(input, output, session) {
     }
 
     # Format cursor information
-    info <- paste0(
-      "Cursor Position:\n",
-      "  Line: ",
-      ctx$line,
-      "\n",
-      "  Column: ",
-      ctx$column,
-      "\n",
-      "  Language: ",
-      ctx$language,
-      "\n\n",
-      "Context Summary:\n",
-      "  Prefix length: ",
-      nchar(ctx$prefix),
-      " chars\n",
-      "  Suffix length: ",
-      nchar(ctx$suffix),
-      " chars\n\n",
-      "Ready for LLM integration!\n",
-      "This context can be sent to an LLM API for code completion."
+    info_parts <- c(
+      "Cursor Position:",
+      paste0("  Line: ", ctx$line),
+      paste0("  Column: ", ctx$column),
+      paste0("  Language: ", ctx$language),
+      "",
+      "Context:",
+      "==============",
+      ctx$prefix,
+      "-- [CURSOR] --",
+      ctx$suffix,
+      "=============="
     )
 
-    info
+    # Add recent edits information
+    if (!is.null(ctx$recentEdits) && length(ctx$recentEdits) > 0) {
+      info_parts <- c(
+        info_parts,
+        "",
+        "Recent Edits:",
+        paste0("  Total edits tracked: ", length(ctx$recentEdits))
+      )
+
+      # Show last 3 edits
+      num_to_show <- min(3, length(ctx$recentEdits))
+      for (i in seq_len(num_to_show)) {
+        edit <- ctx$recentEdits[[length(ctx$recentEdits) - num_to_show + i]]
+        info_parts <- c(
+          info_parts,
+          paste0("  Edit ", i, ": pos ", edit$from, "-", edit$to)
+        )
+        if (nchar(edit$remove) > 0) {
+          info_parts <- c(
+            info_parts,
+            paste0("    Removed: \"", substr(edit$remove, 1, 50), "\"")
+          )
+        }
+        if (nchar(edit$insert) > 0) {
+          info_parts <- c(
+            info_parts,
+            paste0("    Inserted: \"", substr(edit$insert, 1, 50), "\"")
+          )
+        }
+      }
+    }
+
+    paste(info_parts, collapse = "\n")
   })
 }
 

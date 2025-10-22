@@ -178,6 +178,46 @@ export function App() {
 
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Recent Edits
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                    {cursorContext?.recentEdits &&
+                    cursorContext.recentEdits.length > 0 ? (
+                      <div className="space-y-2">
+                        {cursorContext.recentEdits
+                          .slice(-5)
+                          .reverse()
+                          .map((edit, index) => (
+                            <div
+                              key={index}
+                              className="border-b border-border pb-1 last:border-b-0"
+                            >
+                              <div className="text-muted-foreground text-[10px]">
+                                Pos {edit.from}-{edit.to}
+                              </div>
+                              {edit.remove && (
+                                <div className="text-red-400">
+                                  - &quot;{edit.remove}&quot;
+                                </div>
+                              )}
+                              {edit.insert && (
+                                <div className="text-green-400">
+                                  + &quot;{edit.insert}&quot;
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">
+                        No recent edits
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                     Server Response
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono">

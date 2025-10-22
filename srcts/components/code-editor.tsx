@@ -9,6 +9,8 @@ import CodeMirror, { ViewUpdate } from "@uiw/react-codemirror";
 import { r } from "codemirror-lang-r";
 import React, { useCallback, useRef } from "react";
 
+const DEBOUNCE_MS = 0;
+
 export type Language =
   | "javascript"
   | "typescript"
@@ -18,12 +20,21 @@ export type Language =
   | "css"
   | "json";
 
+export interface EditInfo {
+  timestamp: number;
+  from: number;
+  to: number;
+  insert: string;
+  remove: string;
+}
+
 export interface CursorContext {
   line: number;
   column: number;
   prefix: string;
   suffix: string;
   language: Language;
+  recentEdits: EditInfo[];
 }
 
 interface CodeEditorProps {
@@ -44,6 +55,7 @@ export function CodeEditor({
   onCursorChange,
 }: CodeEditorProps) {
   const debounceTimerRef = useRef<number | null>(null);
+  const recentEditsRef = useRef<EditInfo[]>([]);
 
   // Get the appropriate language extension based on selected language
   const getLanguageExtension = () => {
@@ -71,6 +83,32 @@ export function CodeEditor({
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!onCursorChange) return;
+
+      // Track document changes (edits)
+      if (update.docChanged) {
+        const timestamp = Date.now();
+        update.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+          const edit: EditInfo = {
+            timestamp,
+            from: fromA,
+            to: toA,
+            insert: inserted.toString(),
+            remove: update.startState.doc.sliceString(fromA, toA),
+          };
+          recentEditsRef.current.push(edit);
+        });
+
+        // Keep only last 20 edits
+        if (recentEditsRef.current.length > 20) {
+          recentEditsRef.current = recentEditsRef.current.slice(-20);
+        }
+
+        // Remove edits older than 30 seconds
+        const cutoffTime = timestamp - 30000;
+        recentEditsRef.current = recentEditsRef.current.filter(
+          (edit) => edit.timestamp > cutoffTime,
+        );
+      }
 
       // Only process if selection changed
       if (update.selectionSet || update.docChanged) {
@@ -103,8 +141,9 @@ export function CodeEditor({
             prefix: prefix,
             suffix: suffix,
             language: language,
+            recentEdits: [...recentEditsRef.current],
           });
-        }, 200);
+        }, DEBOUNCE_MS);
       }
     },
     [onCursorChange, language],
