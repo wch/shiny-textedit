@@ -178,6 +178,52 @@ export function App() {
 
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Current Selection(s)
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                    {cursorContext?.selections && cursorContext.selections.length > 0 ? (
+                      <div className="space-y-2">
+                        {cursorContext.selections.map((selection, index) => {
+                          const hasText = selection.text.length > 0;
+                          return (
+                            <div
+                              key={index}
+                              className="border-b border-border pb-1 last:border-b-0"
+                            >
+                              <div className="text-muted-foreground text-[10px]">
+                                {hasText ? (
+                                  <>
+                                    Line {selection.fromLine}:{selection.fromColumn} → Line {selection.toLine}:{selection.toColumn} (Pos {selection.from}-{selection.to})
+                                  </>
+                                ) : (
+                                  <>
+                                    Line {selection.fromLine}:{selection.fromColumn} (Pos {selection.from})
+                                  </>
+                                )}
+                              </div>
+                              {hasText ? (
+                                <div className="text-blue-400 mt-1">
+                                  &quot;{selection.text.length > 50 ? selection.text.substring(0, 50) + "..." : selection.text}&quot;
+                                </div>
+                              ) : (
+                                <div className="text-muted-foreground text-[10px] mt-1">
+                                  (cursor only)
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">
+                        No selection
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                     Recent Edits
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">

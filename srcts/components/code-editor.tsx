@@ -28,6 +28,16 @@ export interface EditInfo {
   remove: string;
 }
 
+export interface SelectionInfo {
+  from: number;
+  to: number;
+  fromLine: number;
+  fromColumn: number;
+  toLine: number;
+  toColumn: number;
+  text: string;
+}
+
 export interface CursorContext {
   line: number;
   column: number;
@@ -35,6 +45,7 @@ export interface CursorContext {
   suffix: string;
   language: Language;
   recentEdits: EditInfo[];
+  selections: SelectionInfo[];
 }
 
 interface CodeEditorProps {
@@ -134,6 +145,22 @@ export function CodeEditor({
           clearTimeout(debounceTimerRef.current);
         }
 
+        // Extract selection information for all ranges (supports multiple selections)
+        const selections: SelectionInfo[] = state.selection.ranges.map((range) => {
+          const fromLine = state.doc.lineAt(range.from);
+          const toLine = state.doc.lineAt(range.to);
+
+          return {
+            from: range.from,
+            to: range.to,
+            fromLine: fromLine.number,
+            fromColumn: range.from - fromLine.from,
+            toLine: toLine.number,
+            toColumn: range.to - toLine.from,
+            text: state.doc.sliceString(range.from, range.to),
+          };
+        });
+
         debounceTimerRef.current = window.setTimeout(() => {
           onCursorChange({
             line: lineNumber,
@@ -142,6 +169,7 @@ export function CodeEditor({
             suffix: suffix,
             language: language,
             recentEdits: [...recentEditsRef.current],
+            selections: selections,
           });
         }, DEBOUNCE_MS);
       }

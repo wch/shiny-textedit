@@ -55,7 +55,43 @@ server <- function(input, output, session) {
       "Cursor Position:",
       paste0("  Line: ", ctx$line),
       paste0("  Column: ", ctx$column),
-      paste0("  Language: ", ctx$language),
+      paste0("  Language: ", ctx$language)
+    )
+
+    # Add selection information
+    if (!is.null(ctx$selections) && length(ctx$selections) > 0) {
+      info_parts <- c(
+        info_parts,
+        "",
+        "Current Selection(s):",
+        paste0("  Total selections: ", length(ctx$selections))
+      )
+
+      for (i in seq_along(ctx$selections)) {
+        sel <- ctx$selections[[i]]
+        has_text <- nchar(sel$text) > 0
+
+        if (has_text) {
+          info_parts <- c(
+            info_parts,
+            paste0("  Selection ", i, ":"),
+            paste0("    Range: Line ", sel$fromLine, ":", sel$fromColumn,
+                   " → Line ", sel$toLine, ":", sel$toColumn),
+            paste0("    Positions: ", sel$from, "-", sel$to),
+            paste0("    Text: \"", substr(sel$text, 1, 100), "\"")
+          )
+        } else {
+          info_parts <- c(
+            info_parts,
+            paste0("  Selection ", i, ": (cursor only at Line ",
+                   sel$fromLine, ":", sel$fromColumn, ")")
+          )
+        }
+      }
+    }
+
+    info_parts <- c(
+      info_parts,
       "",
       "Context:",
       "==============",
