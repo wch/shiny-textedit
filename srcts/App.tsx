@@ -6,6 +6,13 @@ import {
   type SelectionInfo,
 } from "@/components/code-editor";
 import {
+  CodeContextDisplay,
+  CursorPositionDisplay,
+  OutputSection,
+  RecentEditsList,
+  SelectionList,
+} from "@/components/output-displays";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -154,159 +161,46 @@ export function App() {
             <div className="flex-1 overflow-auto">
               <div className="p-4 space-y-4">
                 {/* Server-side data sections - always visible */}
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Cursor Position
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-sm font-mono">
-                    {cursorPosition ? (
-                      <div>
-                        Line {cursorPosition.line}, Column{" "}
-                        {cursorPosition.column}
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">
-                        No position data
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <OutputSection title="Cursor Position">
+                  <CursorPositionDisplay position={cursorPosition} />
+                </OutputSection>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Current Selection(s)
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {currentSelections && currentSelections.length > 0 ? (
-                      <div className="space-y-2">
-                        {currentSelections.map((selection, index) => {
-                          const hasText = selection.text.length > 0;
-                          return (
-                            <div
-                              key={index}
-                              className="border-b border-border pb-1 last:border-b-0"
-                            >
-                              <div className="text-muted-foreground text-[10px]">
-                                {hasText ? (
-                                  <>
-                                    Line {selection.fromLine}:
-                                    {selection.fromColumn} → Line{" "}
-                                    {selection.toLine}:{selection.toColumn} (Pos{" "}
-                                    {selection.from}-{selection.to})
-                                  </>
-                                ) : (
-                                  <>
-                                    Line {selection.fromLine}:
-                                    {selection.fromColumn} (Pos {selection.from}
-                                    )
-                                  </>
-                                )}
-                              </div>
-                              {hasText ? (
-                                <div className="text-blue-400 mt-1">
-                                  &quot;
-                                  {selection.text.length > 50
-                                    ? selection.text.substring(0, 50) + "..."
-                                    : selection.text}
-                                  &quot;
-                                </div>
-                              ) : (
-                                <div className="text-muted-foreground text-[10px] mt-1">
-                                  (cursor only)
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">No selection</div>
-                    )}
-                  </div>
-                </div>
+                <OutputSection title="Current Selection(s)">
+                  <SelectionList selections={currentSelections} />
+                </OutputSection>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Context (Prefix)
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {contextPrefix ? (
-                      <pre className="whitespace-pre-wrap break-all">
-                        {contextPrefix.slice(-200)}
-                      </pre>
-                    ) : (
-                      <div className="text-muted-foreground">No prefix</div>
-                    )}
-                  </div>
-                </div>
+                <OutputSection title="Context (Prefix)">
+                  <CodeContextDisplay
+                    content={contextPrefix}
+                    sliceFrom="end"
+                    emptyMessage="No prefix"
+                  />
+                </OutputSection>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Context (Suffix)
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {contextSuffix ? (
-                      <pre className="whitespace-pre-wrap break-all">
-                        {contextSuffix.slice(0, 200)}
-                      </pre>
-                    ) : (
-                      <div className="text-muted-foreground">No suffix</div>
-                    )}
-                  </div>
-                </div>
+                <OutputSection title="Context (Suffix)">
+                  <CodeContextDisplay
+                    content={contextSuffix}
+                    sliceFrom="start"
+                    emptyMessage="No suffix"
+                  />
+                </OutputSection>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Recent Edits
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {recentEditsServer && recentEditsServer.length > 0 ? (
-                      <div className="space-y-2">
-                        {recentEditsServer
-                          .slice(-5)
-                          .reverse()
-                          .map((edit, index) => (
-                            <div
-                              key={index}
-                              className="border-b border-border pb-1 last:border-b-0"
-                            >
-                              <div className="text-muted-foreground text-[10px]">
-                                Pos {edit.from}-{edit.to}
-                              </div>
-                              {edit.remove && (
-                                <div className="text-red-400">
-                                  - &quot;{edit.remove}&quot;
-                                </div>
-                              )}
-                              {edit.insert && (
-                                <div className="text-green-400">
-                                  + &quot;{edit.insert}&quot;
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">
-                        No recent edits
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <OutputSection title="Recent Edits">
+                  <RecentEditsList edits={recentEditsServer} />
+                </OutputSection>
 
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Server Response (Text Summary)
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono">
-                    <pre className="whitespace-pre-wrap">
-                      {cursorInfo || "(waiting for server)"}
-                    </pre>
-                  </div>
-                </div>
+                <OutputSection title="Server Response (Text Summary)">
+                  <pre className="whitespace-pre-wrap">
+                    {cursorInfo || "(waiting for server)"}
+                  </pre>
+                </OutputSection>
 
                 {/* Accordion for client-side debug data */}
-                <Accordion type="single" collapsible className="border-t border-border pt-4">
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="border-t border-border pt-4"
+                >
                   <AccordionItem value="client-debug" className="border-0">
                     <AccordionTrigger className="py-2">
                       <h3 className="text-xs font-semibold text-muted-foreground uppercase">
@@ -314,153 +208,42 @@ export function App() {
                       </h3>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-4">
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                        Cursor Position (Client)
-                      </h4>
-                      <div className="bg-muted p-3 rounded text-sm font-mono">
-                        {cursorContext ? (
-                          <div>
-                            Line {cursorContext.line}, Column{" "}
-                            {cursorContext.column}
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground">
-                            No position data
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      <OutputSection title="Cursor Position (Client)">
+                        <CursorPositionDisplay
+                          position={
+                            cursorContext
+                              ? {
+                                  line: cursorContext.line,
+                                  column: cursorContext.column,
+                                }
+                              : null
+                          }
+                        />
+                      </OutputSection>
 
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                        Current Selection(s) (Client)
-                      </h4>
-                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                        {cursorContext?.selections &&
-                        cursorContext.selections.length > 0 ? (
-                          <div className="space-y-2">
-                            {cursorContext.selections.map(
-                              (selection, index) => {
-                                const hasText = selection.text.length > 0;
-                                return (
-                                  <div
-                                    key={index}
-                                    className="border-b border-border pb-1 last:border-b-0"
-                                  >
-                                    <div className="text-muted-foreground text-[10px]">
-                                      {hasText ? (
-                                        <>
-                                          Line {selection.fromLine}:
-                                          {selection.fromColumn} → Line{" "}
-                                          {selection.toLine}:
-                                          {selection.toColumn} (Pos{" "}
-                                          {selection.from}-{selection.to})
-                                        </>
-                                      ) : (
-                                        <>
-                                          Line {selection.fromLine}:
-                                          {selection.fromColumn} (Pos{" "}
-                                          {selection.from})
-                                        </>
-                                      )}
-                                    </div>
-                                    {hasText ? (
-                                      <div className="text-blue-400 mt-1">
-                                        &quot;
-                                        {selection.text.length > 50
-                                          ? selection.text.substring(0, 50) +
-                                            "..."
-                                          : selection.text}
-                                        &quot;
-                                      </div>
-                                    ) : (
-                                      <div className="text-muted-foreground text-[10px] mt-1">
-                                        (cursor only)
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              },
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground">
-                            No selection
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      <OutputSection title="Current Selection(s) (Client)">
+                        <SelectionList selections={cursorContext?.selections} />
+                      </OutputSection>
 
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                        Context Prefix (Client)
-                      </h4>
-                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                        {cursorContext?.prefix ? (
-                          <pre className="whitespace-pre-wrap break-all">
-                            {cursorContext.prefix.slice(-200)}
-                          </pre>
-                        ) : (
-                          <div className="text-muted-foreground">No prefix</div>
-                        )}
-                      </div>
-                    </div>
+                      <OutputSection title="Context Prefix (Client)">
+                        <CodeContextDisplay
+                          content={cursorContext?.prefix}
+                          sliceFrom="end"
+                          emptyMessage="No prefix"
+                        />
+                      </OutputSection>
 
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                        Context Suffix (Client)
-                      </h4>
-                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                        {cursorContext?.suffix ? (
-                          <pre className="whitespace-pre-wrap break-all">
-                            {cursorContext.suffix.slice(0, 200)}
-                          </pre>
-                        ) : (
-                          <div className="text-muted-foreground">No suffix</div>
-                        )}
-                      </div>
-                    </div>
+                      <OutputSection title="Context Suffix (Client)">
+                        <CodeContextDisplay
+                          content={cursorContext?.suffix}
+                          sliceFrom="start"
+                          emptyMessage="No suffix"
+                        />
+                      </OutputSection>
 
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                        Recent Edits (Client)
-                      </h4>
-                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                        {cursorContext?.recentEdits &&
-                        cursorContext.recentEdits.length > 0 ? (
-                          <div className="space-y-2">
-                            {cursorContext.recentEdits
-                              .slice(-5)
-                              .reverse()
-                              .map((edit, index) => (
-                                <div
-                                  key={index}
-                                  className="border-b border-border pb-1 last:border-b-0"
-                                >
-                                  <div className="text-muted-foreground text-[10px]">
-                                    Pos {edit.from}-{edit.to}
-                                  </div>
-                                  {edit.remove && (
-                                    <div className="text-red-400">
-                                      - &quot;{edit.remove}&quot;
-                                    </div>
-                                  )}
-                                  {edit.insert && (
-                                    <div className="text-green-400">
-                                      + &quot;{edit.insert}&quot;
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground">
-                            No recent edits
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      <OutputSection title="Recent Edits (Client)">
+                        <RecentEditsList edits={cursorContext?.recentEdits} />
+                      </OutputSection>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
