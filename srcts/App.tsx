@@ -1,4 +1,8 @@
-import { CodeEditor, type Language } from "@/components/code-editor";
+import {
+  CodeEditor,
+  type CursorContext,
+  type Language,
+} from "@/components/code-editor";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { useShinyInput, useShinyOutput } from "@posit/shiny-react";
@@ -28,10 +32,17 @@ export function App() {
     { debounceMs: 0 },
   );
 
+  const [cursorContext, setCursorContext] = useShinyInput<CursorContext | null>(
+    "cursor_context",
+    null,
+    { debounceMs: 100 },
+  );
+
   const [lineCount] = useShinyOutput<number>("line_count", 0);
   const [charCount] = useShinyOutput<number>("char_count", 0);
   const [wordCount] = useShinyOutput<number>("word_count", 0);
   const [editorContent] = useShinyOutput<string>("editor_content", "");
+  const [cursorInfo] = useShinyOutput<string>("cursor_info", "");
 
   const handleCodeChange = (value: string) => {
     setCodeContent(value);
@@ -41,6 +52,10 @@ export function App() {
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setSelectedLanguage(event.target.value as Language);
+  };
+
+  const handleCursorChange = (context: CursorContext) => {
+    setCursorContext(context);
   };
 
   return (
@@ -99,6 +114,7 @@ export function App() {
             <CodeEditor
               value={codeContent}
               onChange={handleCodeChange}
+              onCursorChange={handleCursorChange}
               language={selectedLanguage}
               theme={isDarkMode ? "dark" : "light"}
               className="border border-border rounded-lg overflow-hidden flex-1"
@@ -108,13 +124,69 @@ export function App() {
           <div className="border border-border rounded-lg overflow-hidden bg-card flex flex-col">
             <div className="px-4 py-2 border-b border-border flex-shrink-0">
               <h2 className="text-sm font-semibold text-card-foreground">
-                Server Output (editor_content)
+                Cursor Context & Server Output
               </h2>
             </div>
-            <div className="flex-1 overflow-auto bg-muted">
-              <pre className="p-4 text-sm font-mono text-muted-foreground">
-                {editorContent || "(empty)"}
-              </pre>
+            <div className="flex-1 overflow-auto">
+              <div className="p-4 space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Cursor Position
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-sm font-mono">
+                    {cursorContext ? (
+                      <div>
+                        Line {cursorContext.line}, Column {cursorContext.column}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">
+                        No position data
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Context (Prefix)
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                    {cursorContext?.prefix ? (
+                      <pre className="whitespace-pre-wrap break-all">
+                        {cursorContext.prefix.slice(-200)}
+                      </pre>
+                    ) : (
+                      <div className="text-muted-foreground">No prefix</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Context (Suffix)
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                    {cursorContext?.suffix ? (
+                      <pre className="whitespace-pre-wrap break-all">
+                        {cursorContext.suffix.slice(0, 200)}
+                      </pre>
+                    ) : (
+                      <div className="text-muted-foreground">No suffix</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Server Response
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono">
+                    <pre className="whitespace-pre-wrap">
+                      {cursorInfo || "(waiting for server)"}
+                    </pre>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

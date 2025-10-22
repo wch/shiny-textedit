@@ -41,6 +41,40 @@ server <- function(input, output, session) {
   output$editor_content <- render_json({
     input$code_content
   })
+
+  # Process cursor context for LLM autocomplete
+  output$cursor_info <- render_json({
+    ctx <- input$cursor_context
+
+    if (is.null(ctx)) {
+      return("Waiting for cursor context...")
+    }
+
+    # Format cursor information
+    info <- paste0(
+      "Cursor Position:\n",
+      "  Line: ",
+      ctx$line,
+      "\n",
+      "  Column: ",
+      ctx$column,
+      "\n",
+      "  Language: ",
+      ctx$language,
+      "\n\n",
+      "Context Summary:\n",
+      "  Prefix length: ",
+      nchar(ctx$prefix),
+      " chars\n",
+      "  Suffix length: ",
+      nchar(ctx$suffix),
+      " chars\n\n",
+      "Ready for LLM integration!\n",
+      "This context can be sent to an LLM API for code completion."
+    )
+
+    info
+  })
 }
 
 shinyApp(ui = page_react(title = "Shiny Code Editor"), server = server)
