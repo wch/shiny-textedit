@@ -42,6 +42,46 @@ server <- function(input, output, session) {
     input$code_content
   })
 
+  # Separate outputs for UI display
+  output$cursor_position <- render_json({
+    ctx <- input$cursor_context
+    if (is.null(ctx)) return(NULL)
+
+    list(
+      line = ctx$line,
+      column = ctx$column,
+      language = ctx$language
+    )
+  })
+
+  output$current_selections <- render_json({
+    ctx <- input$cursor_context
+    if (is.null(ctx)) return(NULL)
+
+    ctx$selections
+  })
+
+  output$context_prefix <- render_json({
+    ctx <- input$cursor_context
+    if (is.null(ctx)) return(NULL)
+
+    ctx$prefix
+  })
+
+  output$context_suffix <- render_json({
+    ctx <- input$cursor_context
+    if (is.null(ctx)) return(NULL)
+
+    ctx$suffix
+  })
+
+  output$recent_edits_server <- render_json({
+    ctx <- input$cursor_context
+    if (is.null(ctx)) return(NULL)
+
+    ctx$recentEdits
+  })
+
   # Process cursor context for LLM autocomplete
   output$cursor_info <- render_json({
     ctx <- input$cursor_context

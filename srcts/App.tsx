@@ -1,8 +1,16 @@
 import {
   CodeEditor,
   type CursorContext,
+  type EditInfo,
   type Language,
+  type SelectionInfo,
 } from "@/components/code-editor";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { useShinyInput, useShinyOutput } from "@posit/shiny-react";
@@ -41,8 +49,24 @@ export function App() {
   const [lineCount] = useShinyOutput<number>("line_count", 0);
   const [charCount] = useShinyOutput<number>("char_count", 0);
   const [wordCount] = useShinyOutput<number>("word_count", 0);
-  const [editorContent] = useShinyOutput<string>("editor_content", "");
   const [cursorInfo] = useShinyOutput<string>("cursor_info", "");
+
+  // Server-side outputs for display
+  const [cursorPosition] = useShinyOutput<{
+    line: number;
+    column: number;
+    language: string;
+  } | null>("cursor_position", null);
+  const [currentSelections] = useShinyOutput<SelectionInfo[] | null>(
+    "current_selections",
+    null,
+  );
+  const [contextPrefix] = useShinyOutput<string | null>("context_prefix", null);
+  const [contextSuffix] = useShinyOutput<string | null>("context_suffix", null);
+  const [recentEditsServer] = useShinyOutput<EditInfo[] | null>(
+    "recent_edits_server",
+    null,
+  );
 
   const handleCodeChange = (value: string) => {
     setCodeContent(value);
@@ -124,19 +148,21 @@ export function App() {
           <div className="border border-border rounded-lg overflow-hidden bg-card flex flex-col">
             <div className="px-4 py-2 border-b border-border flex-shrink-0">
               <h2 className="text-sm font-semibold text-card-foreground">
-                Cursor Context & Server Output
+                Server Output
               </h2>
             </div>
             <div className="flex-1 overflow-auto">
               <div className="p-4 space-y-4">
+                {/* Server-side data sections - always visible */}
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                     Cursor Position
                   </h3>
                   <div className="bg-muted p-3 rounded text-sm font-mono">
-                    {cursorContext ? (
+                    {cursorPosition ? (
                       <div>
-                        Line {cursorContext.line}, Column {cursorContext.column}
+                        Line {cursorPosition.line}, Column{" "}
+                        {cursorPosition.column}
                       </div>
                     ) : (
                       <div className="text-muted-foreground">
@@ -148,12 +174,65 @@ export function App() {
 
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Current Selection(s)
+                  </h3>
+                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                    {currentSelections && currentSelections.length > 0 ? (
+                      <div className="space-y-2">
+                        {currentSelections.map((selection, index) => {
+                          const hasText = selection.text.length > 0;
+                          return (
+                            <div
+                              key={index}
+                              className="border-b border-border pb-1 last:border-b-0"
+                            >
+                              <div className="text-muted-foreground text-[10px]">
+                                {hasText ? (
+                                  <>
+                                    Line {selection.fromLine}:
+                                    {selection.fromColumn} → Line{" "}
+                                    {selection.toLine}:{selection.toColumn} (Pos{" "}
+                                    {selection.from}-{selection.to})
+                                  </>
+                                ) : (
+                                  <>
+                                    Line {selection.fromLine}:
+                                    {selection.fromColumn} (Pos {selection.from}
+                                    )
+                                  </>
+                                )}
+                              </div>
+                              {hasText ? (
+                                <div className="text-blue-400 mt-1">
+                                  &quot;
+                                  {selection.text.length > 50
+                                    ? selection.text.substring(0, 50) + "..."
+                                    : selection.text}
+                                  &quot;
+                                </div>
+                              ) : (
+                                <div className="text-muted-foreground text-[10px] mt-1">
+                                  (cursor only)
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">No selection</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                     Context (Prefix)
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {cursorContext?.prefix ? (
+                    {contextPrefix ? (
                       <pre className="whitespace-pre-wrap break-all">
-                        {cursorContext.prefix.slice(-200)}
+                        {contextPrefix.slice(-200)}
                       </pre>
                     ) : (
                       <div className="text-muted-foreground">No prefix</div>
@@ -166,9 +245,9 @@ export function App() {
                     Context (Suffix)
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {cursorContext?.suffix ? (
+                    {contextSuffix ? (
                       <pre className="whitespace-pre-wrap break-all">
-                        {cursorContext.suffix.slice(0, 200)}
+                        {contextSuffix.slice(0, 200)}
                       </pre>
                     ) : (
                       <div className="text-muted-foreground">No suffix</div>
@@ -178,59 +257,12 @@ export function App() {
 
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Current Selection(s)
-                  </h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {cursorContext?.selections && cursorContext.selections.length > 0 ? (
-                      <div className="space-y-2">
-                        {cursorContext.selections.map((selection, index) => {
-                          const hasText = selection.text.length > 0;
-                          return (
-                            <div
-                              key={index}
-                              className="border-b border-border pb-1 last:border-b-0"
-                            >
-                              <div className="text-muted-foreground text-[10px]">
-                                {hasText ? (
-                                  <>
-                                    Line {selection.fromLine}:{selection.fromColumn} → Line {selection.toLine}:{selection.toColumn} (Pos {selection.from}-{selection.to})
-                                  </>
-                                ) : (
-                                  <>
-                                    Line {selection.fromLine}:{selection.fromColumn} (Pos {selection.from})
-                                  </>
-                                )}
-                              </div>
-                              {hasText ? (
-                                <div className="text-blue-400 mt-1">
-                                  &quot;{selection.text.length > 50 ? selection.text.substring(0, 50) + "..." : selection.text}&quot;
-                                </div>
-                              ) : (
-                                <div className="text-muted-foreground text-[10px] mt-1">
-                                  (cursor only)
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">
-                        No selection
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                     Recent Edits
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
-                    {cursorContext?.recentEdits &&
-                    cursorContext.recentEdits.length > 0 ? (
+                    {recentEditsServer && recentEditsServer.length > 0 ? (
                       <div className="space-y-2">
-                        {cursorContext.recentEdits
+                        {recentEditsServer
                           .slice(-5)
                           .reverse()
                           .map((edit, index) => (
@@ -264,7 +296,7 @@ export function App() {
 
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                    Server Response
+                    Server Response (Text Summary)
                   </h3>
                   <div className="bg-muted p-3 rounded text-xs font-mono">
                     <pre className="whitespace-pre-wrap">
@@ -272,6 +304,166 @@ export function App() {
                     </pre>
                   </div>
                 </div>
+
+                {/* Accordion for client-side debug data */}
+                <Accordion type="single" collapsible className="border-t border-border pt-4">
+                  <AccordionItem value="client-debug" className="border-0">
+                    <AccordionTrigger className="py-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase">
+                        Client-Side Debug Data
+                      </h3>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-4">
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                        Cursor Position (Client)
+                      </h4>
+                      <div className="bg-muted p-3 rounded text-sm font-mono">
+                        {cursorContext ? (
+                          <div>
+                            Line {cursorContext.line}, Column{" "}
+                            {cursorContext.column}
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground">
+                            No position data
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                        Current Selection(s) (Client)
+                      </h4>
+                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                        {cursorContext?.selections &&
+                        cursorContext.selections.length > 0 ? (
+                          <div className="space-y-2">
+                            {cursorContext.selections.map(
+                              (selection, index) => {
+                                const hasText = selection.text.length > 0;
+                                return (
+                                  <div
+                                    key={index}
+                                    className="border-b border-border pb-1 last:border-b-0"
+                                  >
+                                    <div className="text-muted-foreground text-[10px]">
+                                      {hasText ? (
+                                        <>
+                                          Line {selection.fromLine}:
+                                          {selection.fromColumn} → Line{" "}
+                                          {selection.toLine}:
+                                          {selection.toColumn} (Pos{" "}
+                                          {selection.from}-{selection.to})
+                                        </>
+                                      ) : (
+                                        <>
+                                          Line {selection.fromLine}:
+                                          {selection.fromColumn} (Pos{" "}
+                                          {selection.from})
+                                        </>
+                                      )}
+                                    </div>
+                                    {hasText ? (
+                                      <div className="text-blue-400 mt-1">
+                                        &quot;
+                                        {selection.text.length > 50
+                                          ? selection.text.substring(0, 50) +
+                                            "..."
+                                          : selection.text}
+                                        &quot;
+                                      </div>
+                                    ) : (
+                                      <div className="text-muted-foreground text-[10px] mt-1">
+                                        (cursor only)
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground">
+                            No selection
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                        Context Prefix (Client)
+                      </h4>
+                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                        {cursorContext?.prefix ? (
+                          <pre className="whitespace-pre-wrap break-all">
+                            {cursorContext.prefix.slice(-200)}
+                          </pre>
+                        ) : (
+                          <div className="text-muted-foreground">No prefix</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                        Context Suffix (Client)
+                      </h4>
+                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                        {cursorContext?.suffix ? (
+                          <pre className="whitespace-pre-wrap break-all">
+                            {cursorContext.suffix.slice(0, 200)}
+                          </pre>
+                        ) : (
+                          <div className="text-muted-foreground">No suffix</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                        Recent Edits (Client)
+                      </h4>
+                      <div className="bg-muted p-3 rounded text-xs font-mono max-h-32 overflow-auto">
+                        {cursorContext?.recentEdits &&
+                        cursorContext.recentEdits.length > 0 ? (
+                          <div className="space-y-2">
+                            {cursorContext.recentEdits
+                              .slice(-5)
+                              .reverse()
+                              .map((edit, index) => (
+                                <div
+                                  key={index}
+                                  className="border-b border-border pb-1 last:border-b-0"
+                                >
+                                  <div className="text-muted-foreground text-[10px]">
+                                    Pos {edit.from}-{edit.to}
+                                  </div>
+                                  {edit.remove && (
+                                    <div className="text-red-400">
+                                      - &quot;{edit.remove}&quot;
+                                    </div>
+                                  )}
+                                  {edit.insert && (
+                                    <div className="text-green-400">
+                                      + &quot;{edit.insert}&quot;
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground">
+                            No recent edits
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             </div>
           </div>
