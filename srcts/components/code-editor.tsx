@@ -1,16 +1,22 @@
-import CodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { python } from "@codemirror/lang-python";
-import { html } from "@codemirror/lang-html";
-import { css } from "@codemirror/lang-css";
-import { json } from "@codemirror/lang-json";
-import { r } from "codemirror-lang-r";
-import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import { githubLight } from "@uiw/codemirror-theme-github";
-import React from "react";
 import type { Theme } from "@/hooks/useSystemTheme";
+import { css } from "@codemirror/lang-css";
+import { html } from "@codemirror/lang-html";
+import { javascript } from "@codemirror/lang-javascript";
+import { json } from "@codemirror/lang-json";
+import { python } from "@codemirror/lang-python";
+import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
+import CodeMirror from "@uiw/react-codemirror";
+import { r } from "codemirror-lang-r";
+import React from "react";
 
-export type Language = "javascript" | "typescript" | "python" | "r" | "html" | "css" | "json";
+export type Language =
+  | "javascript"
+  | "typescript"
+  | "python"
+  | "r"
+  | "html"
+  | "css"
+  | "json";
 
 interface CodeEditorProps {
   value: string;
@@ -20,7 +26,13 @@ interface CodeEditorProps {
   className?: string;
 }
 
-export function CodeEditor({ value, onChange, language, theme = "dark", className = "" }: CodeEditorProps) {
+export function CodeEditor({
+  value,
+  onChange,
+  language,
+  theme = "dark",
+  className = "",
+}: CodeEditorProps) {
   // Get the appropriate language extension based on selected language
   const getLanguageExtension = () => {
     switch (language) {
@@ -48,9 +60,12 @@ export function CodeEditor({ value, onChange, language, theme = "dark", classNam
       <CodeMirror
         value={value}
         height="600px"
-        theme={theme === "dark" ? vscodeDark : githubLight}
+        theme={theme === "dark" ? vscodeDark : vscodeLight}
         extensions={[getLanguageExtension()]}
         onChange={(value) => onChange(value)}
+        style={{
+          fontSize: "14px",
+        }}
         basicSetup={{
           lineNumbers: true,
           highlightActiveLineGutter: true,
