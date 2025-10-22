@@ -14,7 +14,7 @@ summary(data$mpg)
 `;
 
 export function App() {
-  const { isDarkMode, toggle } = useDarkMode({ applyDarkClass: false });
+  const { isDarkMode, toggle } = useDarkMode({ applyDarkClass: true });
 
   const [codeContent, setCodeContent] = useShinyInput<string>(
     "code_content",
@@ -43,25 +43,13 @@ export function App() {
     setSelectedLanguage(event.target.value as Language);
   };
 
-  // Theme-specific styles
-  const bgClass = isDarkMode ? "bg-slate-950" : "bg-gray-50";
-  const titleClass = isDarkMode ? "text-white" : "text-gray-900";
-  const statsClass = isDarkMode ? "text-slate-400" : "text-gray-600";
-  const labelClass = isDarkMode ? "text-slate-400" : "text-gray-600";
-  const selectClass = isDarkMode
-    ? "bg-slate-800 text-white border-slate-700 focus:ring-blue-500"
-    : "bg-white text-gray-900 border-gray-300 focus:ring-blue-500";
-  const editorBorderClass = isDarkMode ? "border-slate-700" : "border-gray-300";
-  const panelBgClass = isDarkMode ? "bg-slate-900" : "bg-white";
-  const panelTextClass = isDarkMode ? "text-slate-300" : "text-gray-800";
-
   return (
-    <div className={`h-screen flex flex-col ${bgClass}`}>
+    <div className="h-screen flex flex-col bg-background">
       <div className="flex-shrink-0 px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
-          <h1 className={`text-3xl font-bold ${titleClass}`}>Code Editor</h1>
+          <h1 className="text-3xl font-bold text-foreground">Code Editor</h1>
           <div className="flex gap-6 items-center">
-            <div className={`flex gap-4 text-sm ${statsClass}`}>
+            <div className="flex gap-4 text-sm text-muted-foreground">
               <span>Lines: {lineCount}</span>
               <span>Words: {wordCount}</span>
               <span>Characters: {charCount}</span>
@@ -69,7 +57,7 @@ export function App() {
             <div className="flex items-center gap-2">
               <label
                 htmlFor="language-select"
-                className={`text-sm ${labelClass}`}
+                className="text-sm text-muted-foreground"
               >
                 Language:
               </label>
@@ -77,7 +65,7 @@ export function App() {
                 id="language-select"
                 value={selectedLanguage}
                 onChange={handleLanguageChange}
-                className={`${selectClass} border rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2`}
+                className="bg-background text-foreground border border-input rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="r">R</option>
                 <option value="python">Python</option>
@@ -113,22 +101,18 @@ export function App() {
               onChange={handleCodeChange}
               language={selectedLanguage}
               theme={isDarkMode ? "dark" : "light"}
-              className={`border ${editorBorderClass} rounded-lg overflow-hidden flex-1`}
+              className="border border-border rounded-lg overflow-hidden flex-1"
             />
           </div>
 
-          <div
-            className={`border ${editorBorderClass} rounded-lg overflow-hidden ${panelBgClass} flex flex-col`}
-          >
-            <div
-              className={`px-4 py-2 border-b ${editorBorderClass} flex-shrink-0`}
-            >
-              <h2 className={`text-sm font-semibold ${titleClass}`}>
+          <div className="border border-border rounded-lg overflow-hidden bg-card flex flex-col">
+            <div className="px-4 py-2 border-b border-border flex-shrink-0">
+              <h2 className="text-sm font-semibold text-card-foreground">
                 Server Output (editor_content)
               </h2>
             </div>
             <div className="flex-1 overflow-auto bg-muted">
-              <pre className={`p-4 text-sm font-mono ${panelTextClass}`}>
+              <pre className="p-4 text-sm font-mono text-muted-foreground">
                 {editorContent || "(empty)"}
               </pre>
             </div>
